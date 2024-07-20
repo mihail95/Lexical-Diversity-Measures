@@ -72,5 +72,3 @@ def ttr():
                         ttr_score = statistics.mean(len_ttr_scores)
                         df_idx = curr_text_len if vocab_or_len else curr_vocab_size
                         chart.add_rows(pd.DataFrame([ttr_score], columns=["TTR"], index=[df_idx]))
-                        
-

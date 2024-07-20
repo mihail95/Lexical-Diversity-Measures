@@ -1,6 +1,7 @@
 import streamlit as st
 from measures.TTR import ttr
 from measures.MATTR import mattr
+from measures.compare_multiple import compare
 
 def intro():
     st.write("# Lexical Diversity Measures")
@@ -12,6 +13,7 @@ page_names_to_funcs = {
     "—": intro,
     "Token Type Ratio (TTR)": ttr,
     "Moving-Average Type-Token Ratio (MATTR)": mattr,
+    "Compare Custom Texts": compare,
 }
 
 measure_name = st.sidebar.selectbox("Choose a measure", page_names_to_funcs.keys())
