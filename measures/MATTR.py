@@ -49,7 +49,7 @@ def mattr():
                 status_text = st.sidebar.empty()
                 progress_bar.empty()
 
-                ########## TTR MAIN LOOP ##################################
+                ########## MATTR MAIN LOOP ##################################
                 text_gen_map = {
                     "Sequential": generate_repeating_text_naive,
                     "Random": generate_random_text_naive,
