@@ -4,6 +4,7 @@ import pandas as pd
 import statistics
 from measures.helpers.text_generation import generate_repeating_text_naive, generate_random_text_naive, generate_random_text_zipf, genearate_alphabet_permuatations
 from lexical_diversity import lex_div as ld
+import matplotlib.pyplot as plt
 
 def hdd():
     st.header('Hypergeometric distribution D (HDD)', divider='gray')
@@ -12,6 +13,7 @@ def hdd():
     st.subheader('Dynamic Graph', divider='gray')
     # False = Vary Vocab; True = Vary Text Length
     vocab_or_len = st.toggle("Vary Vocabulary Size / Vary Text Length", value= False, help="Left = Vary Vocabulary; Right = Vary Text Length")
+    compare_custom_text = st.toggle("Custom Text Comparison", value= False)
 
     with st.form("HDD-Form"):
         if vocab_or_len:
@@ -37,6 +39,10 @@ def hdd():
         
         smoothing_runs = st.slider("Smoothing Runs Count", min_value=1, max_value=50, value=10, step=1)
 
+        custom_text = ""
+        if compare_custom_text:
+            custom_text = st.text_area(f"Enter Custom Text Here")
+
         if st.form_submit_button("Run Test"):
             if ((max_vocab_size < min_vocab_size) or (max_text_length < min_text_length)):
                 st.warning("Maximum variable bounds should be higher than the minimum!", icon=":material/warning:")
@@ -59,6 +65,10 @@ def hdd():
                 alphabet = sorted(list(genearate_alphabet_permuatations(ngrams = 2)))
                 chart = st.line_chart()
                 progress_ctr = 1
+
+                all_rows = []
+                indeces = []
+
                 for curr_vocab_size in range(min_vocab_size, max_vocab_size + 1):
                     vocab = set(alphabet[:curr_vocab_size])
                     for curr_text_len in range(min_text_length, max_text_length + 1):
@@ -72,3 +82,20 @@ def hdd():
                         hdd_score = statistics.mean(len_hdd_scores)
                         df_idx = curr_text_len if vocab_or_len else curr_vocab_size
                         chart.add_rows(pd.DataFrame([hdd_score], columns=["hdd"], index=[df_idx]))
+                        all_rows.append(hdd_score)
+                        indeces.append(df_idx)
+                        
+                # Custom Text Comparison
+                if compare_custom_text:
+                    st.subheader('Custom Text Comparison', divider='gray')
+                    st.markdown("The circle represents a the HDD measure for the given custom text")
+                    st.markdown(":black_circle: - HDD")
+
+                    fig = plt.figure() 
+                    all_data = pd.DataFrame(all_rows, index=indeces)
+                    plt.plot(all_data)
+
+                    custom_text_split = custom_text.split()
+                    x_axis = len(custom_text_split) if vocab_or_len else len(set(custom_text_split))
+                    plt.plot(x_axis, ld.hdd(custom_text_split), 'ko')
+                    st.pyplot(fig)

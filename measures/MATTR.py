@@ -4,6 +4,7 @@ import pandas as pd
 import statistics
 from measures.helpers.text_generation import generate_repeating_text_naive, generate_random_text_naive, generate_random_text_zipf, genearate_alphabet_permuatations
 from lexical_diversity import lex_div as ld
+import matplotlib.pyplot as plt
 
 def mattr():
     st.header('Moving-Average Type-Token Ratio (MATTR)', divider='gray')
@@ -12,6 +13,7 @@ def mattr():
     st.subheader('Dynamic Graph', divider='gray')
     # False = Vary Vocab; True = Vary Text Length
     vocab_or_len = st.toggle("Vary Vocabulary Size / Vary Text Length", value= False, help="Left = Vary Vocabulary; Right = Vary Text Length")
+    compare_custom_text = st.toggle("Custom Text Comparison", value= False)
 
     with st.form("MATTR-Form"):
         window_size = st.slider("Window Size", min_value=1, max_value=200, value=15, step=1)
@@ -39,6 +41,10 @@ def mattr():
         
         smoothing_runs = st.slider("Smoothing Runs Count", min_value=1, max_value=50, value=10, step=1)
 
+        custom_text = ""
+        if compare_custom_text:
+            custom_text = st.text_area(f"Enter Custom Text Here")
+
         if st.form_submit_button("Run Test"):
             if ((max_vocab_size < min_vocab_size) or (max_text_length < min_text_length)):
                 st.warning("Maximum variable bounds should be higher than the minimum!", icon=":material/warning:")
@@ -61,6 +67,10 @@ def mattr():
                 alphabet = sorted(list(genearate_alphabet_permuatations(ngrams = 2)))
                 chart = st.line_chart()
                 progress_ctr = 1
+
+                all_rows = []
+                indeces = []
+
                 for curr_vocab_size in range(min_vocab_size, max_vocab_size + 1):
                     vocab = set(alphabet[:curr_vocab_size])
                     for curr_text_len in range(min_text_length, max_text_length + 1):
@@ -77,3 +87,22 @@ def mattr():
                         mattr_score = statistics.mean(len_mattr_scores)
                         df_idx = curr_text_len if vocab_or_len else curr_vocab_size
                         chart.add_rows(pd.DataFrame([[mattr_score, ttr_score]], columns=["MATTR", "TTR"], index=[df_idx]))
+                        all_rows.append([mattr_score, ttr_score])
+                        indeces.append(df_idx)
+                
+                # Custom Text Comparison
+                if compare_custom_text:
+                    st.subheader('Custom Text Comparison', divider='gray')
+                    st.markdown("Each circle represents a different measure for the given custom text")
+
+                    st.markdown(":black_circle: - TTR &nbsp;&nbsp; :red_circle: - MATTR")
+
+                    fig = plt.figure() 
+                    all_data = pd.DataFrame(all_rows, columns=["MATTR", "TTR"], index=indeces)
+                    plt.plot(all_data)
+
+                    custom_text_split = custom_text.split()
+                    x_axis = len(custom_text_split) if vocab_or_len else len(set(custom_text_split))
+                    plt.plot(x_axis, ld.ttr(custom_text_split), 'ko')
+                    plt.plot(x_axis, ld.mattr(custom_text_split), 'ro', alpha=0.85)
+                    st.pyplot(fig)

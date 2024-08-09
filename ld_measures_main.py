@@ -17,7 +17,7 @@ page_names_to_funcs = {
     "Moving-Average Type-Token Ratio (MATTR)": mattr,
     'Hypergeometric distribution D (HDD)': hdd,
     'Measure of lexical textual diversity (MTLD)': mtld,
-    "Compare Custom Texts": compare,
+    "Compare Multiple Custom Texts": compare,
 }
 
 measure_name = st.sidebar.selectbox("Choose a measure", page_names_to_funcs.keys())

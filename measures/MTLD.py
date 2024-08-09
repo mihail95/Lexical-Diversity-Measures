@@ -4,6 +4,7 @@ import pandas as pd
 import statistics
 from measures.helpers.text_generation import generate_repeating_text_naive, generate_random_text_naive, generate_random_text_zipf, genearate_alphabet_permuatations
 from lexical_diversity import lex_div as ld
+import matplotlib.pyplot as plt
 
 def mtld():
     st.header('Measure of lexical textual diversity (MTLD)', divider='gray')
@@ -19,6 +20,8 @@ def mtld():
         show_bidir = st.toggle("Bidirectional MTLD", value= False)
     with columns[2]:
         show_wrap = st.toggle("Wrapping MTLD", value= False)
+
+    compare_custom_text = st.toggle("Custom Text Comparison", value= False)
 
     with st.form("MTLD-Form"):
         if vocab_or_len:
@@ -43,6 +46,10 @@ def mtld():
         )
         
         smoothing_runs = st.slider("Smoothing Runs Count", min_value=1, max_value=50, value=10, step=1)
+
+        custom_text = ""
+        if compare_custom_text:
+            custom_text = st.text_area(f"Enter Custom Text Here")
 
         if st.form_submit_button("Run Test"):
             if ((max_vocab_size < min_vocab_size) or (max_text_length < min_text_length)):
@@ -71,6 +78,9 @@ def mtld():
                 if show_bidir: cols.append("mtld_bid")
                 if show_wrap: cols.append("mtld_wrap")
 
+                all_rows = []
+                indeces = []
+
                 for curr_vocab_size in range(min_vocab_size, max_vocab_size + 1):
                     vocab = set(alphabet[:curr_vocab_size])
                     for curr_text_len in range(min_text_length, max_text_length + 1):
@@ -87,6 +97,9 @@ def mtld():
                             progress_ctr += 1
                         mtld_score = statistics.mean(len_mtld_scores)
                         data = [mtld_score]
+                        df_idx = curr_text_len if vocab_or_len else curr_vocab_size
+                        all_rows.append(data)
+                        indeces.append(df_idx)
                         if show_bidir or show_wrap:
                             data = [data]
                             if show_bidir:
@@ -95,5 +108,24 @@ def mtld():
                             if show_wrap:
                                 mtld_wrap_score = statistics.mean(len_mtld_wrap_scores)
                                 data[0].append(mtld_wrap_score)
-                        df_idx = curr_text_len if vocab_or_len else curr_vocab_size
+                        
                         chart.add_rows(pd.DataFrame(data, columns=cols, index=[df_idx]))
+
+                # Custom Text Comparison
+                if compare_custom_text:
+                    st.subheader('Custom Text Comparison', divider='gray')
+                    st.markdown("Each circle represents a different MTLD measure for the given custom text")
+
+                    st.markdown(":black_circle: - MTLD &nbsp;&nbsp; :red_circle: - Bidirectional MTLD &nbsp;&nbsp; :large_blue_circle: - Wrappint MTLD")
+
+                    fig = plt.figure() 
+                    all_data = pd.DataFrame(all_rows, columns=cols, index=indeces)
+                    plt.plot(all_data)
+
+                    custom_text_split = custom_text.split()
+                    x_axis = len(custom_text_split) if vocab_or_len else len(set(custom_text_split))
+                    plt.plot(x_axis, ld.mtld(custom_text_split), 'ko')
+                    if show_bidir: plt.plot(x_axis, ld.mtld_ma_bid(custom_text_split), 'ro', alpha=0.85)
+                    if show_wrap: plt.plot(x_axis, ld.mtld_ma_wrap(custom_text_split), 'bo', alpha=0.85)
+                    st.pyplot(fig)
+                    
