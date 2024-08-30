@@ -8,7 +8,16 @@ import matplotlib.pyplot as plt
 
 def mattr():
     st.header('Moving-Average Type-Token Ratio (MATTR)', divider='gray')
-    st.markdown("Include some background on MATTR")
+    st.markdown("The Moving-Average Type-Token Ratio (Covington & McFall, 2010) attempts to solve the text length problem by calculating TTRs within a sliding window of tokens, starting from the first token and continuing through to the last. Each window has its own TTR, and the MATTR is determined by averaging these TTRs.")
+
+    with st.expander("MATTR Algorithm", icon=":material/expand_circle_down:"):
+        st.write("MATTR choses a window $W_i$ of size **W** and uses its vocabulary size (token count) $V_{W_i}$ and the number of tokens in the text $N_{W_i}$ for the calculation.")
+        st.markdown("1. Choose window size: *for example* $W = 15$")
+        st.markdown(r"2. Calculate TTR for current window: $W_1 = \{N_1 ... N_{15}\};\ TTR_{W_1} = \dfrac{V_{W_1}}{N_{W_1}}$")
+        st.markdown(r"3. Shift window to the right by 1 token: $W_2 = \{N_2 ... N_{16}\}$")
+        st.markdown("4. End if less than $W$ tokens are left, else go back to step 2")
+        st.markdown("5. Calulate mean of all TTRs")
+
 
     st.subheader('Dynamic Graph', divider='gray')
     # False = Vary Vocab; True = Vary Text Length
@@ -16,6 +25,14 @@ def mattr():
     compare_custom_text = st.toggle("Custom Text Comparison", value= False)
 
     with st.form("MATTR-Form"):
+        text_gen_alg = st.selectbox(
+            "Which text generation algorithm should be used?",
+            ("Sequential", "Random", "Zipf Distribution"),
+            index=None,
+            placeholder="Select text generation algorithm...",
+            help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
+        )
+
         window_size = st.slider("Window Size", min_value=1, max_value=200, value=15, step=1)
 
         if vocab_or_len:
@@ -30,15 +47,7 @@ def mattr():
             max_vocab_size = st.slider("Maximum Vocabulary Size", min_value=1, max_value=500, value=50, step=1)
             min_text_length = st.slider("Text Length", min_value=1, max_value=500, value=50, step=1)
             max_text_length = min_text_length
-        
-        text_gen_alg = st.selectbox(
-            "Which text generation algorithm should be used?",
-            ("Sequential", "Random", "Zipf Distribution"),
-            index=None,
-            placeholder="Select text generation algorithm...",
-            help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
-        )
-        
+
         smoothing_runs = st.slider("Smoothing Runs Count", min_value=1, max_value=50, value=10, step=1)
 
         custom_text = ""
@@ -106,3 +115,7 @@ def mattr():
                     plt.plot(x_axis, ld.ttr(custom_text_split), 'ko')
                     plt.plot(x_axis, ld.mattr(custom_text_split), 'ro', alpha=0.85)
                     st.pyplot(fig)
+
+    st.write("------------------")
+    st.write("#### References")
+    st.write("Covington, M. A., & McFall, J. D. (2010). Cutting the Gordian knot: The moving-average type-token ratio (MATTR). Journal of Quantitative Linguistics, 17(2), 94–100. https://doi.org/10.1080/09296171003643098")

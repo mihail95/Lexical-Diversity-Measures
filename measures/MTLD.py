@@ -8,7 +8,25 @@ import matplotlib.pyplot as plt
 
 def mtld():
     st.header('Measure of lexical textual diversity (MTLD)', divider='gray')
-    st.markdown("Include some background on MTLD")
+    st.markdown("MTLD calculates a text's lexical diversity by assessing the mean length of word sequences that maintain a specific type-token ratio (TTR), typically set at 0.720. As each word is added, TTR is recalculated, and once it drops below the threshold, the factor count increases, and the process resets. The final MTLD score is obtained by dividing the total word count by the factor count, including adjustments for incomplete factors (Fergadiotis et al., 2015; McCarthy & Jarvis, 2010).")
+    st.markdown("Two variants of the measure are Bidirectional MTLD and Wrapping MTLD. The former is desribed by McCarthy & Jarvis (2010) as simply calculating the MTLD for a reversed copy of the text and then calculating the mean of the two scores. The latter is a variant, implemented in the [lexical_diversity Python library by Kristopher Kyle](https://github.com/kristopherkyle/lexical_diversity) in which no partial factor is calculated - the MTLD calculation wraps around to the start of the sentence until the threshold is reached.")
+
+    with st.expander("MTLD Algorithm", icon=":material/expand_circle_down:"):
+        st.markdown(r"1. Define a TTR threshold: &nbsp; $TTR_{max} = 0.72$")
+        st.markdown(r"2. Start sequence at first token and calculate $TTR_{i}$")
+        st.markdown(r"3. Extend the sequence until $TTR_i < TTR_{max}$")
+        st.markdown(r"4. Increment the sequence count and start a new sequence")
+        st.markdown(r"5. Repeat until EOT")
+        st.markdown(r"6. *conditional:* If last window doesn't reach threshold - calculate the partial factor $TTR_{part}$")
+        st.markdown(r"7. Final score = $i_{max} + TTR_{part}$")
+        
+        st.markdown("**For Bidirectional MTLD:**")
+        st.markdown(r"8. Repeat in the other direction (last to first token)")
+        st.markdown(r"9. Calculate mean of the two scores")
+
+        st.markdown("**For Wrapping MTLD:**")
+        st.markdown(r"6. *conditional:* If last window doesn't reach threshold - wrap to the start of the text and extend the sequence until threshold is reached$")
+        st.markdown(r"7. Final score = $i_{max}$")
 
     st.subheader('Dynamic Graph', divider='gray')
 
@@ -24,6 +42,14 @@ def mtld():
     compare_custom_text = st.toggle("Custom Text Comparison", value= False)
 
     with st.form("MTLD-Form"):
+        text_gen_alg = st.selectbox(
+            "Which text generation algorithm should be used?",
+            ("Sequential", "Random", "Zipf Distribution"),
+            index=None,
+            placeholder="Select text generation algorithm...",
+            help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
+        )
+
         if vocab_or_len:
             # Vary Text Length => Constant vocabulary size and different starting and max text lengths
             min_vocab_size = st.slider("Vocabulary Size", min_value=1, max_value=500, value=10, step=1)
@@ -36,14 +62,6 @@ def mtld():
             max_vocab_size = st.slider("Maximum Vocabulary Size", min_value=1, max_value=500, value=50, step=1)
             min_text_length = st.slider("Text Length", min_value=1, max_value=500, value=50, step=1)
             max_text_length = min_text_length
-        
-        text_gen_alg = st.selectbox(
-            "Which text generation algorithm should be used?",
-            ("Sequential", "Random", "Zipf Distribution"),
-            index=None,
-            placeholder="Select text generation algorithm...",
-            help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
-        )
         
         smoothing_runs = st.slider("Smoothing Runs Count", min_value=1, max_value=50, value=10, step=1)
 
@@ -128,4 +146,8 @@ def mtld():
                     if show_bidir: plt.plot(x_axis, ld.mtld_ma_bid(custom_text_split), 'ro', alpha=0.85)
                     if show_wrap: plt.plot(x_axis, ld.mtld_ma_wrap(custom_text_split), 'bo', alpha=0.85)
                     st.pyplot(fig)
-                    
+
+    st.write("------------------")
+    st.write("#### References")
+    st.write("Fergadiotis, G., Wright, H. H., & Green, S. B. (2015). Psychometric Evaluation of Lexical Diversity Indices: Assessing Length Effects. Journal of speech, language, and hearing research : JSLHR, 58(3), 840–852. https://doi.org/10.1044/2015_JSLHR-L-14-0280")
+    st.write("McCarthy, P.M., Jarvis, S. MTLD, vocd-D, and HD-D: A validation study of sophisticated approaches to lexical diversity assessment. Behavior Research Methods 42, 381–392 (2010). https://doi.org/10.3758/BRM.42.2.381")                 

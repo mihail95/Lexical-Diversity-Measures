@@ -8,7 +8,12 @@ import matplotlib.pyplot as plt
 
 def hdd():
     st.header('Hypergeometric distribution D (HDD)', divider='gray')
-    st.markdown("Include some background on HDD")
+    st.markdown("The hypergeometric distribution calculates the probability of drawing a certain number of tokens of a specific type from a sample without replacement. In the HD-D index, this distribution is used to determine the probability of encountering each lexical type in a random sample of 42 words from the text. These probabilities are summed to create an LD index for the text (McCarthy & Jarvis, 2010).")
+    st.write("Fergadiotis et al. (2015) shows that HDD covaries with TTR in confirmatory factor analysis, suggesting that it also is affected by text length.")
+
+    with st.expander("HDD Algorithm", icon=":material/expand_circle_down:"):
+        st.markdown("1. For each type $t$ in $V$ calculate the probability $HD_t$ of finding it in a random sample using the Hypergeometric Distribution.")
+        st.markdown(r"2. Calculate the HD-D index: $\displaystyle\sum\limits_t^{|V|}HD_t$")
 
     st.subheader('Dynamic Graph', divider='gray')
     # False = Vary Vocab; True = Vary Text Length
@@ -16,6 +21,14 @@ def hdd():
     compare_custom_text = st.toggle("Custom Text Comparison", value= False)
 
     with st.form("HDD-Form"):
+        text_gen_alg = st.selectbox(
+            "Which text generation algorithm should be used?",
+            ("Sequential", "Random", "Zipf Distribution"),
+            index=None,
+            placeholder="Select text generation algorithm...",
+            help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
+        )
+
         if vocab_or_len:
             # Vary Text Length => Constant vocabulary size and different starting and max text lengths
             min_vocab_size = st.slider("Vocabulary Size", min_value=1, max_value=500, value=10, step=1)
@@ -28,14 +41,6 @@ def hdd():
             max_vocab_size = st.slider("Maximum Vocabulary Size", min_value=1, max_value=500, value=50, step=1)
             min_text_length = st.slider("Text Length", min_value=1, max_value=500, value=50, step=1)
             max_text_length = min_text_length
-        
-        text_gen_alg = st.selectbox(
-            "Which text generation algorithm should be used?",
-            ("Sequential", "Random", "Zipf Distribution"),
-            index=None,
-            placeholder="Select text generation algorithm...",
-            help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
-        )
         
         smoothing_runs = st.slider("Smoothing Runs Count", min_value=1, max_value=50, value=10, step=1)
 
@@ -99,3 +104,8 @@ def hdd():
                     x_axis = len(custom_text_split) if vocab_or_len else len(set(custom_text_split))
                     plt.plot(x_axis, ld.hdd(custom_text_split), 'ko')
                     st.pyplot(fig)
+
+    st.write("------------------")
+    st.write("#### References")
+    st.write("Fergadiotis, G., Wright, H. H., & Green, S. B. (2015). Psychometric Evaluation of Lexical Diversity Indices: Assessing Length Effects. Journal of speech, language, and hearing research : JSLHR, 58(3), 840–852. https://doi.org/10.1044/2015_JSLHR-L-14-0280")
+    st.write("McCarthy, P.M., Jarvis, S. MTLD, vocd-D, and HD-D: A validation study of sophisticated approaches to lexical diversity assessment. Behavior Research Methods 42, 381–392 (2010). https://doi.org/10.3758/BRM.42.2.381") 

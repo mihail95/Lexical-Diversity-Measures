@@ -8,7 +8,23 @@ import matplotlib.pyplot as plt
 
 def ttr():
     st.header('Token-Type Ratio (TTR)', divider='gray')
-    st.markdown("Include some background on TTR")
+    st.markdown("TTR is an long-established method of measuring lexical diversity, develeped by Wendell Johnson to help measure vocabulary \"flexibility\" or \"variability\" (Johnson, 1944). This measure uses a simple ratio of types (unique words in a sample) to tokens (all words in the sample).")
+    st.markdown("A significant flaw of this method, however, is that the TTR Score of a sample is affected by the sample's lenght. Several approaches (Root TTR, Log TTR, Maas TTR) have been proposed with the claim of modifying the calculation to be length-agnostic, but none of them have been found to actually succeed in this task (Covington & McFall, 2010; Fergadiotis et al., 2015).")
+
+    with st.expander("Measure Calculations", icon=":material/expand_circle_down:"):
+        st.write("All measures use the vocabulary size (token count) **V** and the number of tokens in the text **N** for the calculation.")
+        st.markdown('''
+            <style>
+            .katex-html {
+                text-align: left;
+            }
+            </style>''',
+            unsafe_allow_html=True
+        )
+        st.latex(r'''\textbf{TTR} = \frac{V}{N}''')
+        st.latex(r'''\textbf{Root TTR} = \frac{V}{\sqrt{N}}\hspace{2mm} \text{(Guiraud, 1954, as cited in Tweedie \& Baayen, 1998)}''')
+        st.latex(r'''\textbf{Log TTR} = \frac{log\ V}{log\ N}\hspace{2mm} \text{(Herdan, 1960, as cited in Tweedie \& Baayen, 1998)}''')
+        st.latex(r'''\textbf{Maas TTR} = \frac{log\ N - log\ V}{log\ N^2}\hspace{2mm} \text{(Maas, 1972, as cited in Tweedie \& Baayen, 1998)}''')
 
     st.subheader('Dynamic Graph', divider='gray')
     # False = Vary Vocab; True = Vary Text Length
@@ -25,6 +41,14 @@ def ttr():
     compare_custom_text = st.toggle("Custom Text Comparison", value= False)
 
     with st.form("TTR-Form"):
+        text_gen_alg = st.selectbox(
+            "Which text generation algorithm should be used?",
+            ("Sequential", "Random", "Zipf Distribution"),
+            index=None,
+            placeholder="Select text generation algorithm...",
+            help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
+        )
+
         if vocab_or_len:
             # Vary Text Length => Constant vocabulary size and different starting and max text lengths
             min_vocab_size = st.slider("Vocabulary Size", min_value=1, max_value=500, value=10, step=1)
@@ -37,14 +61,6 @@ def ttr():
             max_vocab_size = st.slider("Maximum Vocabulary Size", min_value=1, max_value=500, value=50, step=1)
             min_text_length = st.slider("Text Length", min_value=1, max_value=500, value=50, step=1)
             max_text_length = min_text_length
-        
-        text_gen_alg = st.selectbox(
-            "Which text generation algorithm should be used?",
-            ("Sequential", "Random", "Zipf Distribution"),
-            index=None,
-            placeholder="Select text generation algorithm...",
-            help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
-        )
         
         smoothing_runs = st.slider("Smoothing Runs Count", min_value=1, max_value=50, value=10, step=1)
         
@@ -137,4 +153,10 @@ def ttr():
                     if show_log_ttr: plt.plot(x_axis, ld.log_ttr(custom_text_split), 'bo', alpha=0.85)
                     if show_maas_ttr: plt.plot(x_axis, ld.maas_ttr(custom_text_split), 'bD', alpha=0.85)
                     st.pyplot(fig)
-                    
+
+    st.write("------------------")
+    st.write("#### References")
+    st.write("Covington, M. A., & McFall, J. D. (2010). Cutting the Gordian knot: The moving-average type-token ratio (MATTR). Journal of Quantitative Linguistics, 17(2), 94–100. https://doi.org/10.1080/09296171003643098")
+    st.write("Fergadiotis, G., Wright, H. H., & Green, S. B. (2015). Psychometric Evaluation of Lexical Diversity Indices: Assessing Length Effects. Journal of speech, language, and hearing research : JSLHR, 58(3), 840–852. https://doi.org/10.1044/2015_JSLHR-L-14-0280")
+    st.write("Johnson, W. (Ed.). (1944). Studies in language behavior: A program of research. Psychological Monographs, 56(2), 1-15.")
+    st.write("Tweedie. F.J. and Baayen, R.H. (1998). How Variable May a Constant Be? Measures of Lexical Richness in Perspective. Computers and the Humanities, 32(5), 323-352.")
