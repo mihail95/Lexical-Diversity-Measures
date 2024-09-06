@@ -25,7 +25,7 @@ def mtld():
         st.markdown(r"9. Calculate mean of the two scores")
 
         st.markdown("**For Wrapping MTLD:**")
-        st.markdown(r"6. *conditional:* If last window doesn't reach threshold - wrap to the start of the text and extend the sequence until threshold is reached$")
+        st.markdown(r"6. *conditional:* If last window doesn't reach threshold - wrap to the start of the text and extend the sequence until threshold is reached")
         st.markdown(r"7. Final score = $i_{max}$")
 
     st.subheader('Dynamic Graph', divider='gray')

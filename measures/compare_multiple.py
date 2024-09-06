@@ -1,4 +1,6 @@
 import streamlit as st
+import spacy
+import numpy as np
 from lexical_diversity import lex_div as ld
 import altair as alt
 import pandas as pd
@@ -46,11 +48,22 @@ def compare():
             placeholder="Select text generation algorithm...",
             help="Sequential: Repeats all vocabulary items in the same order until the maximum text length is reached\n\nRandom: Picks random vocabulary types (each has the same probability\n\nZipf Distribution: Picks random vocabulary types from a zipf distribution (value of the n-th entry is inversely proportional to n)"
         )
+    
+    lemmatize_lang = None
+    with columns[0]:
+        lemmatize_texts = st.toggle("Lemmatize texts", value= False, help="Toggles the lemmatization for the custom texts.")
+    with columns[2]:
+        if lemmatize_texts:
+            lemmatize_lang = st.selectbox(
+            "What language are the texts in?",
+            ("German", "English"),
+            index=None,
+            placeholder="Select text language..."
+        )
 
     with st.form("Compare-Form"):
         texts = { f"text{ctr + 1}" : "" for ctr in range(st.session_state['text_input_compare_count']) }
 
-        # TODO: Add measure controls (in multiple columns maybe)
         mattr_window_length = 50
         mtld_min_segment_len = 10
         if show_mattr:
@@ -82,6 +95,25 @@ def compare():
                 texts['generated_text'] = gen_text
 
 
+            if lemmatize_lang != None:
+                lemmatize_lang_map = {
+                    "German": ("de_core_news_sm", ['parser', 'senter', 'ner']), 
+                    "English": ("en_core_web_sm", ['parser', 'senter', 'ner'])
+                }
+                lemmatize_options = lemmatize_lang_map[lemmatize_lang]
+                nlp = spacy.load(lemmatize_options[0], disable = lemmatize_options[1])
+
+                for text_id, text in texts.items():
+                    doc = nlp(text)
+                    texts[text_id] = " ".join([token.lemma_ for token in doc])
+
+            cols = ['TextID', 'Text Length', 'Vocabulary Size']
+            if show_ttr: cols.append('TTR')
+            if show_mattr: cols.append('MATTR')
+            if show_hdd: cols.append('HDD')
+            if show_mtld: cols.append('MTLD')
+
+            texts_df = pd.DataFrame(columns=cols)               
             plot_data = []
             # Calculate measures for all texts and write them in an array of objects
             # example: [{"id": "text1", "measure": "ttr", "value": 22}, {"id": "text1", "measure": "mattr", "value": 12}, {"id": "text2", "measure": "ttr", "value": 43}]
@@ -90,11 +122,28 @@ def compare():
                 text_tokens = text.split()
 
                 if len(text_tokens) == 0: continue
+                text_metrics = []
+                if show_ttr:
+                    ttr = ld.ttr(text_tokens)
+                    plot_data.append({"id": text_id, "measure": "ttr", "value": ttr})
+                    text_metrics.append(ttr)
 
-                plot_data.append({"id": text_id, "measure": "ttr", "value": ld.ttr(text_tokens)})
-                plot_data.append({"id": text_id, "measure": "mattr", "value": ld.mattr(text_tokens, mattr_window_length)})
-                plot_data.append({"id": text_id, "measure": "hdd", "value": ld.hdd(text_tokens)})
-                plot_data.append({"id": text_id, "measure": "mtld", "value": ld.mtld(text_tokens, mtld_min_segment_len)})
+                if show_mattr:
+                    mattr = ld.mattr(text_tokens, mattr_window_length)
+                    plot_data.append({"id": text_id, "measure": "mattr", "value": mattr})
+                    text_metrics.append(mattr)
+
+                if show_hdd:
+                    hdd = ld.hdd(text_tokens)
+                    plot_data.append({"id": text_id, "measure": "hdd", "value": hdd})
+                    text_metrics.append(hdd)
+                
+                if show_mtld:
+                    mtld = ld.mtld(text_tokens, mtld_min_segment_len)
+                    plot_data.append({"id": text_id, "measure": "mtld", "value": mtld})
+                    text_metrics.append(mtld)
+
+                texts_df.loc[len(texts_df)] = [text_id, len(text.split()), len(set(text.split())), *text_metrics]
 
                 status_text.text(f"{round(progress_ctr/(st.session_state['text_input_compare_count'] + int(show_generated_text)), 2) * 100}% Complete")
                 progress_bar.progress(round(progress_ctr/(st.session_state["text_input_compare_count"] + int(show_generated_text)), 2))
@@ -104,6 +153,8 @@ def compare():
 
             if len(gen_text) > 0:
                 st.text_area(f"Automatically generated text using the {text_gen_alg} algorithm.",placeholder= gen_text, disabled= True)
+            
+            st.dataframe(data = texts_df, hide_index=True)
 
             if not df.empty:
                 if show_ttr:
