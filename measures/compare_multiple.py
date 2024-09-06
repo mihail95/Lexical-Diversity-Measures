@@ -121,7 +121,10 @@ def compare():
             for text_id, text in texts.items():
                 text_tokens = text.split()
 
-                if len(text_tokens) == 0: continue
+                if len(text_tokens) == 0:
+                    progress_ctr += 1
+                    continue
+                
                 text_metrics = []
                 if show_ttr:
                     ttr = ld.ttr(text_tokens)
